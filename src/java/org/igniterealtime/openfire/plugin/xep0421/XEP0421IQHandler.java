@@ -53,14 +53,31 @@ public class XEP0421IQHandler implements PacketInterceptor
     public String getOccupantId(JID userjid,JID roomjid)
     {
         String key = this.plugin.getCache().get(roomjid.toBareJID());
+
         if (key==null)
         {
             key = this.plugin.getDB().getKey(roomjid);
+
             if (key==null)
             {
                 key = createKeyForMuc(roomjid);
-                this.plugin.getDB().insertKey(roomjid, key);
+
+                if (this.plugin.getDB().insertKey(roomjid, key))
+                {
+                    Log.debug("Added muc private key {} for muc {} to database",key,roomjid.toBareJID());
+                }
+                else {
+                    Log.error("Could not add key {} for muc {} to database",key,roomjid.toBareJID());
+                }
+            }
+            if (key!=null)
+            {
                 this.plugin.getCache().put(roomjid.toBareJID(), key);
+                Log.debug("Key {} for muc {} was added to cache",key,roomjid.toBareJID());
+            }
+            else
+            {
+                Log.error("Could not add key={} for muc {} to cache","NULL",roomjid.toBareJID());
             }
         }
 
@@ -110,92 +127,176 @@ public class XEP0421IQHandler implements PacketInterceptor
         }
     }
 
-    private void handleOutgoingPresence(Presence p)
+    private MultiUserChatService getServiceFromJid(JID jid)
+    {
+        try
+        {
+            return XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(jid);
+        }
+        catch (Exception e)
+        {
+            Log.debug("Could not find muc service from JID \"{}\"",jid.toString());
+            return null;
+        }
+    }
+
+    private MultiUserChatService getServiceFromDomain(JID jid)
+    {
+        String service = jid.getDomain().substring(0,jid.getDomain().indexOf("."));
+        try
+        {
+            return XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(service);
+        }
+        catch (Exception e)
+        {
+            Log.error("Could not find muc service from JID \"{}\" (domain {})",jid.toString(),service);
+            return null;
+        }
+    }
+
+    private void handleOutgoingPresence(Presence p, Session s)
     {
         Element x = p.getChildElement("x", NAMESPACE_MUC_USER);
         if (x!=null)
         {
-            try {
-                MultiUserChatService service = XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(p.getFrom());
-                if (service==null||p.getFrom().getNode()==null) // only process muc rooms, not the request to the service
+
+            MultiUserChatService service = getServiceFromJid(p.getFrom());
+            if (service==null)
+            {
+                service = getServiceFromDomain(p.getFrom());
+                return;
+            }
+
+            if (service!=null)
+            {
+
+                String node = p.getFrom().getNode();
+
+                if (node==null)
                 {
                     return;
                 }
 
-                MUCRoom room = service.getChatRoom(p.getFrom().getNode());
-                if (room!=null)
+                try
                 {
-                    List<MUCRole> occupants = room.getOccupantsByNickname(p.getFrom().getResource());
-                    if (occupants.size()>0)
+                    MUCRoom room = service.getChatRoom(node);
+                    if (room!=null)
                     {
-                        JID barejid = occupants.get(0).getUserAddress().asBareJID();
-                        String newid = getOccupantId(barejid,p.getFrom().asBareJID());
-                        if (newid!=null)
+                        JID barejid = getBareJid(room,s,p.getFrom());
+                        if (barejid!=null)
                         {
-                            Element occupant_id = p.getChildElement("occupant-id", NAMESPACE_XEP0421);
-                            if (occupant_id!=null)
+                            String newid = getOccupantId(barejid,p.getFrom().asBareJID());
+                            if (newid!=null)
                             {
-                                occupant_id.detach();
+                                Element occupant_id = p.getChildElement("occupant-id", NAMESPACE_XEP0421);
+                                if (occupant_id!=null)
+                                {
+                                    occupant_id.detach();
+                                }
+                                occupant_id = p.addChildElement("occupant-id", NAMESPACE_XEP0421);
+                                occupant_id.addAttribute("id", newid);
                             }
-
-                            occupant_id = p.addChildElement("occupant-id", NAMESPACE_XEP0421);
-                            occupant_id.addAttribute("id", newid);
                         }
                     }
-                    else {
-                        Log.warn("User with nickname \"{}\" is not in room \"{}\"",p.getFrom().getResource(),p.getFrom().toBareJID());
-                    }
-                }
 
-            }
-            catch (Exception e)
-            {
-                Log.error("Could not find muc: "+e.getMessage(),e);
+                }
+                catch (Exception e)
+                {
+                    Log.error("Could not find muc room from JID \"{}\"",p.getFrom().toString(),e.getMessage(),e);
+                }
             }
         }
     }
 
-    private void handleOutgoingMessage(Message m)
+    private void handleOutgoingMessage(Message m, Session s)
     {
-        try {
-            if (m.getType()!=Message.Type.groupchat)
+
+        if (m.getType()!=Message.Type.groupchat)
+        {
+            return;
+        }
+
+        MultiUserChatService service = getServiceFromJid(m.getFrom());
+        if (service==null)
+        {
+            service = getServiceFromDomain(m.getFrom());
+            return;
+        }
+
+        if (service!=null)
+        {
+
+            String node = m.getFrom().getNode();
+
+            if (node==null)
             {
                 return;
             }
 
-            MultiUserChatService service = XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService(m.getFrom());
-            if (service==null||m.getFrom().getNode()==null) // only process muc rooms, not the request to the service
+            try
             {
-                return;
-            }
-
-            MUCRoom room = service.getChatRoom(m.getFrom().getNode());
-            if (room!=null)
-            {
-                List<MUCRole> occupants = room.getOccupantsByNickname(m.getFrom().getResource());
-                if (occupants.size()>0)
+                MUCRoom room = service.getChatRoom(node);
+                if (room!=null)
                 {
-                    JID barejid = occupants.get(0).getUserAddress().asBareJID();
-                    String newid = getOccupantId(barejid,m.getFrom().asBareJID());
-                    if (newid!=null)
+                    JID barejid = getBareJid(room,s,m.getFrom());
+                    if (barejid!=null)
                     {
-                        Element occupant_id = m.getChildElement("occupant-id", NAMESPACE_XEP0421);
-                        if (occupant_id!=null)
+                        String newid = getOccupantId(barejid,m.getFrom().asBareJID());
+                        if (newid!=null)
                         {
-                            occupant_id.detach();
+                            Element occupant_id = m.getChildElement("occupant-id", NAMESPACE_XEP0421);
+                            if (occupant_id!=null)
+                            {
+                                occupant_id.detach();
+                            }
+                            occupant_id = m.addChildElement("occupant-id", NAMESPACE_XEP0421);
+                            occupant_id.addAttribute("id", newid);
                         }
-                        occupant_id = m.addChildElement("occupant-id", NAMESPACE_XEP0421);
-                        occupant_id.addAttribute("id", newid);
                     }
                 }
-                else {
-                    Log.warn("User with nickname \"{}\" is not in room \"{}\"",m.getFrom().getResource(),m.getFrom().toBareJID());
-                }
+            }
+            catch (Exception e)
+            {
+                Log.error("Could not find muc service from JID \"{}\"",m.getFrom().toString());
             }
         }
-        catch (Exception e)
+    }
+    
+    private JID getBareJid(MUCRoom room, Session s, JID from) {
+        List<MUCRole> occupants = null;
+
+        if (!s.getAddress().toString().equalsIgnoreCase(from.toString()))
         {
-            Log.error("Could not find muc: "+e.getMessage(),e);
+            String nickname = from.getResource();
+            if (nickname!=null&&room.getOccupantsCount()>0)
+            {
+                try 
+                {
+                    occupants = room.getOccupantsByNickname(nickname);
+                }
+                catch (Exception e)
+                {
+                    //user not in room?!
+                    return null;
+                }
+
+                if (occupants!=null&&occupants.size()>0)
+                {
+                    return occupants.get(0).getUserAddress().asBareJID();
+                }
+                else {
+                    //user not in room?!
+                    return null;
+                }
+            }
+            else
+            {
+                //packet from service?
+                return null;
+            }
+        }
+        else {
+            return s.getAddress().asBareJID();
         }
     }
 
@@ -219,7 +320,7 @@ public class XEP0421IQHandler implements PacketInterceptor
                 {
                     if (packet.getFrom()!=null)
                     {
-                        handleOutgoingPresence((Presence) packet);
+                        handleOutgoingPresence((Presence) packet,session);
                     }
                 }
                 else
@@ -227,7 +328,7 @@ public class XEP0421IQHandler implements PacketInterceptor
                 {
                     if (packet.getFrom()!=null)
                     {
-                        handleOutgoingMessage((Message) packet);
+                        handleOutgoingMessage((Message) packet,session);
                     }
                 }
             }
