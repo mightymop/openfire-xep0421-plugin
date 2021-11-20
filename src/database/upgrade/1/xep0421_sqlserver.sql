@@ -1,1 +1,0 @@
-UPDATE ofVersion SET version = 1 WHERE name = 'xep0241';
