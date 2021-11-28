@@ -4,7 +4,6 @@ IF NOT EXISTS (select * from sysobjects where name='ofMucPrivateKeys' and xtype=
 	  _key                  VARCHAR(128)    NOT NULL,
 	  CONSTRAINT ofMUCPrivateKeys_pk PRIMARY KEY (_roomjid)
 	);
-GO
 
 UPDATE ofVersion SET    version = 1 WHERE name = 'xep0241' 
 
