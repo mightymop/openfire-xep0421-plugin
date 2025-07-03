@@ -3,8 +3,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
                    WHERE table_name = 'ofMucPrivateKeys') THEN
         CREATE TABLE ofMucPrivateKeys (
-            roomjid VARCHAR(255) PRIMARY KEY,
-            id VARCHAR(128) NOT NULL
+            _roomjid VARCHAR(255) PRIMARY KEY,
+            _key VARCHAR(128) NOT NULL
         );
     END IF;
 

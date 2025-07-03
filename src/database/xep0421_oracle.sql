@@ -1,8 +1,8 @@
 BEGIN
     EXECUTE IMMEDIATE '
     CREATE TABLE ofMucPrivateKeys (
-        roomjid VARCHAR2(255) PRIMARY KEY,
-        id VARCHAR2(128) NOT NULL
+        _roomjid VARCHAR2(255) PRIMARY KEY,
+        _key VARCHAR2(128) NOT NULL
     )';
 EXCEPTION
     WHEN OTHERS THEN

@@ -5,8 +5,8 @@ IF NOT EXISTS (
 )
 BEGIN
     CREATE TABLE dbo.ofMucPrivateKeys (
-        roomjid NVARCHAR(255) PRIMARY KEY NOT NULL,
-        id NVARCHAR(128) NOT NULL
+        _roomjid NVARCHAR(255) PRIMARY KEY NOT NULL,
+        _key NVARCHAR(128) NOT NULL
     )
 END';
 

@@ -3,8 +3,8 @@ BEGIN
 
     EXECUTE IMMEDIATE '
     CREATE TABLE ofMucPrivateKeys (
-        roomjid VARCHAR(255) NOT NULL PRIMARY KEY,
-        id VARCHAR(128) NOT NULL
+        _roomjid VARCHAR(255) NOT NULL PRIMARY KEY,
+        _key VARCHAR(128) NOT NULL
     )';
 END;
 /

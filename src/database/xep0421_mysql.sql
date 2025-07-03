@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS ofMucPrivateKeys (
-    roomjid              VARCHAR(255)    NOT NULL,
-    id                  VARCHAR(128)    NOT NULL,
-    PRIMARY KEY (_roomjid)
+    _roomjid              VARCHAR(255)    NOT NULL,
+    _key                  VARCHAR(128)    NOT NULL,
+    PRIMARY KEY (__roomjid)
 );
 
 INSERT INTO ofVersion (name, version)

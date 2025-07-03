@@ -14,15 +14,15 @@ public class DatabaseController {
 
     private static final Logger Log = LoggerFactory.getLogger(DatabaseController.class);
 
-    private static final String GET_KEY_FROM_MUC = "SELECT id FROM ofMucPrivateKeys WHERE roomjid=?";
-    private static final String INSERT_KEY_FROM_MUC = "INSERT INTO ofMucPrivateKeys (roomjid,id) VALUES (?,?)";
-    private static final String DELETE_KEY_FROM_MUC = "DELETE FROM ofMucPrivateKeys where roomjid=?";
+    private static final String GET_KEY_FROM_MUC = "SELECT _key FROM ofMucPrivateKeys WHERE _roomjid=?";
+    private static final String INSERT_KEY_FROM_MUC = "INSERT INTO ofMucPrivateKeys (_roomjid,_key) VALUES (?,?)";
+    private static final String DELETE_KEY_FROM_MUC = "DELETE FROM ofMucPrivateKeys where _roomjid=?";
 
     public DatabaseController() {
 
     }
 
-    public String getKey(JID roomjid)
+    public String getKey(JID _roomjid)
     {
         Connection con;
         try {
@@ -38,7 +38,7 @@ public class DatabaseController {
         try {
 
             pstmt = con.prepareStatement(GET_KEY_FROM_MUC);
-            pstmt.setString(1, roomjid.toBareJID());
+            pstmt.setString(1, _roomjid.toBareJID());
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -56,11 +56,11 @@ public class DatabaseController {
         }
     }
 
-    public boolean deleteKey(JID roomjid) {
-        return deleteKey(roomjid,true);
+    public boolean deleteKey(JID _roomjid) {
+        return deleteKey(_roomjid,true);
     }
 
-    private boolean deleteKey(JID roomjid,boolean writelog) {
+    private boolean deleteKey(JID _roomjid,boolean writelog) {
         Connection con;
         try {
             con = DbConnectionManager.getConnection();
@@ -76,19 +76,19 @@ public class DatabaseController {
 
         try {
             pstmt = con.prepareStatement(DELETE_KEY_FROM_MUC);
-            pstmt.setString(1, roomjid.toBareJID());
+            pstmt.setString(1, _roomjid.toBareJID());
 
             return pstmt.executeUpdate()>0||!writelog?true:false;
         } catch (SQLException sqle) {            
-            Log.error("Could not delete the key for room: \"{}\"",roomjid.toBareJID(), sqle);
+            Log.error("Could not delete the key for room: \"{}\"",_roomjid.toBareJID(), sqle);
             return false;
         } finally {
             DbConnectionManager.closeConnection(pstmt,con);
         }
     }
     
-    public boolean insertKey(JID roomjid, String key) {
-        deleteKey(roomjid,false);
+    public boolean insertKey(JID _roomjid, String key) {
+        deleteKey(_roomjid,false);
 
         Connection con;
         try {
@@ -102,12 +102,12 @@ public class DatabaseController {
 
         try {
             pstmt = con.prepareStatement(INSERT_KEY_FROM_MUC);
-            pstmt.setString(1, roomjid.toBareJID());
+            pstmt.setString(1, _roomjid.toBareJID());
             pstmt.setString(2, key);
 
             return pstmt.executeUpdate()>0?true:false;
         } catch (SQLException sqle) {
-            Log.error("Could not insert the key for room: \"{}\"",roomjid.toBareJID(), sqle);
+            Log.error("Could not insert the key for room: \"{}\"",_roomjid.toBareJID(), sqle);
             return false;
         } finally {
             DbConnectionManager.closeConnection(pstmt,con);
