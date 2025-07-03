@@ -1,11 +1,16 @@
-IF NOT EXISTS (select * from sysobjects where name='ofMucPrivateKeys' and xtype='U')
-    CREATE TABLE ofMucPrivateKeys (
-	  _roomjid              VARCHAR(255)    NOT NULL,
-	  _key                  VARCHAR(128)    NOT NULL,
-	  CONSTRAINT ofMUCPrivateKeys_pk PRIMARY KEY (_roomjid)
-	);
+EXEC sp_executesql N'
+IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_NAME = ''ofMucPrivateKeys''
+)
+BEGIN
+    CREATE TABLE dbo.ofMucPrivateKeys (
+        roomjid NVARCHAR(255) PRIMARY KEY NOT NULL,
+        id NVARCHAR(128) NOT NULL
+    )
+END';
 
-UPDATE ofVersion SET    version = 1 WHERE name = 'xep0241' 
-
-IF @@ROWCOUNT = 0 
-INSERT INTO ofVersion (name, version) VALUES ('xep0241', 1);
+UPDATE ofVersion SET version = 1 WHERE name = 'xep0421';
+INSERT INTO ofVersion (name, version)
+SELECT 'xep0421', 1
+WHERE NOT EXISTS (SELECT 1 FROM ofVersion WHERE name = 'xep0421');

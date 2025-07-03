@@ -11,7 +11,7 @@ import org.dom4j.Element;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.interceptor.PacketInterceptor;
 import org.jivesoftware.openfire.interceptor.PacketRejectedException;
-import org.jivesoftware.openfire.muc.MUCRole;
+import org.jivesoftware.openfire.muc.MUCOccupant;
 import org.jivesoftware.openfire.muc.MUCRoom;
 import org.jivesoftware.openfire.muc.MultiUserChatService;
 import org.jivesoftware.openfire.session.Session;
@@ -263,7 +263,7 @@ public class XEP0421IQHandler implements PacketInterceptor
     }
     
     private JID getBareJid(MUCRoom room, Session s, JID from) {
-        List<MUCRole> occupants = null;
+        List<MUCOccupant> occupants = null;
 
         if (!s.getAddress().toString().equalsIgnoreCase(from.toString()))
         {

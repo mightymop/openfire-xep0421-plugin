@@ -14,9 +14,9 @@ public class DatabaseController {
 
     private static final Logger Log = LoggerFactory.getLogger(DatabaseController.class);
 
-    private static final String GET_KEY_FROM_MUC = "SELECT _key FROM ofMucPrivateKeys WHERE _roomjid=?";
-    private static final String INSERT_KEY_FROM_MUC = "INSERT INTO ofMucPrivateKeys (_roomjid,_key) VALUES (?,?)";
-    private static final String DELETE_KEY_FROM_MUC = "DELETE FROM ofMucPrivateKeys where _roomjid=?";
+    private static final String GET_KEY_FROM_MUC = "SELECT id FROM ofMucPrivateKeys WHERE roomjid=?";
+    private static final String INSERT_KEY_FROM_MUC = "INSERT INTO ofMucPrivateKeys (roomjid,id) VALUES (?,?)";
+    private static final String DELETE_KEY_FROM_MUC = "DELETE FROM ofMucPrivateKeys where roomjid=?";
 
     public DatabaseController() {
 

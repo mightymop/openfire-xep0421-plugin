@@ -1,7 +1,18 @@
-CREATE TABLE ofMucPrivateKeys (
-  _roomjid              VARCHAR(255)    NOT NULL,
-  _key                  VARCHAR(128)    NOT NULL,
-  CONSTRAINT ofMUCPrivateKeys_pk PRIMARY KEY (_roomjid)
-);
+BEGIN
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '42710' BEGIN END; -- table already exists
 
-INSERT INTO ofVersion (name, version) VALUES ('xep0241', 1);
+    EXECUTE IMMEDIATE '
+    CREATE TABLE ofMucPrivateKeys (
+        roomjid VARCHAR(255) NOT NULL PRIMARY KEY,
+        id VARCHAR(128) NOT NULL
+    )';
+END;
+/
+
+MERGE INTO ofVersion AS v
+USING (SELECT 'xep0421' AS name FROM SYSIBM.SYSDUMMY1) AS src
+ON v.name = src.name
+WHEN MATCHED THEN
+    UPDATE SET version = 1
+WHEN NOT MATCHED THEN
+    INSERT (name, version) VALUES ('xep0421', 1);

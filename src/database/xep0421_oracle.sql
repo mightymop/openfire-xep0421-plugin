@@ -1,7 +1,21 @@
-CREATE TABLE ofMucPrivateKeys (
-  _roomjid              VARCHAR(255)    NOT NULL,
-  _key                  VARCHAR(128)    NOT NULL,
-  CONSTRAINT ofMUCPrivateKeys_pk PRIMARY KEY (_roomjid)
-);
+BEGIN
+    EXECUTE IMMEDIATE '
+    CREATE TABLE ofMucPrivateKeys (
+        roomjid VARCHAR2(255) PRIMARY KEY,
+        id VARCHAR2(128) NOT NULL
+    )';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -955 THEN -- ORA-00955: name is already used by an existing object
+            RAISE;
+        END IF;
+END;
+/
 
-INSERT INTO ofVersion (name, version) VALUES ('xep0241', 1);
+MERGE INTO ofVersion v
+USING (SELECT 'xep0421' AS name FROM dual) s
+ON (v.name = s.name)
+WHEN MATCHED THEN
+    UPDATE SET v.version = 1
+WHEN NOT MATCHED THEN
+    INSERT (name, version) VALUES ('xep0421', 1);
